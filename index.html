@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bleach TYBW Cour 4</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;width:100vw;height:100vh;overflow:hidden;background:#f0ebe4}
+
+.bg{position:fixed;inset:0;background-image:url('data:image/jpeg;base64,""" + b64 + """');background-size:cover;background-position:center;z-index:0}
+
+.topbar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px 32px 13px;border-bottom:1.5px solid rgba(0,0,0,0.12);background:rgba(255,255,255,0.6);backdrop-filter:blur(12px)}
+.topbar-title{font-size:17px;font-weight:600;color:#1a1a1a;letter-spacing:0.5px}
+
+/* ── CLOCK ── */
+.clock-area{position:fixed;top:50%;left:0;right:0;transform:translateY(-50%);z-index:10;text-align:center;padding:0}
+
+.labels-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;margin-bottom:6px;padding:0 3vw}
+.unit-label{font-size:clamp(12px,1.5vw,19px);font-weight:500;color:#222;letter-spacing:2px;text-transform:uppercase;text-align:center}
+.sep-sp{width:clamp(14px,2.5vw,44px)}
+
+.digits-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;padding:0 2vw}
+.unit-digits{display:flex;justify-content:center;gap:clamp(2px,0.35vw,7px)}
+
+/* iOS-style drum roller per digit */
+.drum{
+  position:relative;
+  width:clamp(56px,11vw,148px);
+  height:clamp(68px,13vw,178px);
+  overflow:hidden;
+}
+/* mask top & bottom fade */
+.drum::before,.drum::after{
+  content:'';position:absolute;left:0;right:0;height:35%;z-index:2;pointer-events:none;
+}
+.drum::before{top:0;background:linear-gradient(to bottom,rgba(255,255,255,0.0) 0%,transparent 100%)}
+.drum::after{bottom:0;background:linear-gradient(to top,rgba(255,255,255,0.0) 0%,transparent 100%)}
+
+.drum-track{
+  position:absolute;
+  left:0;right:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  /* each cell = 100% drum height */
+  transition:transform 0.42s cubic-bezier(0.23,1,0.32,1);
+  will-change:transform;
+}
+
+.drum-cell{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(72px,12.5vw,168px);
+  color:#111;
+  line-height:1;
+  height:clamp(68px,13vw,178px);
+  display:flex;align-items:center;justify-content:center;
+  text-shadow:0 2px 24px rgba(255,255,255,0.55);
+  flex-shrink:0;
+  user-select:none;
+}
+
+.colon{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(52px,10vw,148px);
+  color:#111;line-height:1;
+  padding:0 clamp(3px,0.8vw,16px);
+  opacity:0.65;
+  text-shadow:0 2px 20px rgba(255,255,255,0.5);
+  animation:blink 1s step-end infinite;
+  align-self:center;
+}
+@keyframes blink{0%,100%{opacity:0.65}50%{opacity:0.18}}
+
+/* badge & toggle */
+.date-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(18,18,26,0.82);backdrop-filter:blur(6px);color:#fff;padding:8px 20px;border-radius:30px;font-size:15px;font-weight:500;letter-spacing:1px;margin-top:20px}
+.event-toggle{display:inline-flex;margin-top:12px;background:rgba(18,18,26,0.72);backdrop-filter:blur(6px);border-radius:30px;padding:4px;gap:2px}
+.toggle-btn{font-size:13px;font-weight:500;padding:7px 20px;border-radius:24px;border:none;cursor:pointer;transition:all 0.2s;color:rgba(255,255,255,0.4);background:transparent;letter-spacing:0.3px;font-family:'Inter',sans-serif}
+.toggle-btn.active{background:#2a5fd4;color:#fff}
+
+/* ── MUSIC PLAYER ── */
+.player{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  z-index:30;
+  background:rgba(255,255,255,0.82);
+  backdrop-filter:blur(16px);
+  border:0.5px solid rgba(0,0,0,0.1);
+  border-radius:60px;
+  padding:13px 22px 18px;
+  display:flex;align-items:center;gap:14px;
+  min-width:360px;max-width:90vw;
+  box-shadow:0 4px 28px rgba(0,0,0,0.1);
+}
+.p-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.p-title{font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-sub{font-size:11px;color:#999;white-space:nowrap}
+.p-controls{display:flex;align-items:center;gap:6px}
+.ic-btn{width:30px;height:30px;border-radius:50%;border:none;background:transparent;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;color:#222}
+.ic-btn:hover{background:rgba(0,0,0,0.07)}
+.play-btn{width:40px;height:40px;border-radius:50%;background:#111;border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:transform 0.1s}
+.play-btn:active{transform:scale(0.92)}
+.vol-row{display:flex;align-items:center;gap:6px}
+.vol-sl{-webkit-appearance:none;width:72px;height:3px;border-radius:2px;background:rgba(0,0,0,0.15);outline:none;cursor:pointer}
+.vol-sl::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#111;cursor:pointer}
+.up-label{font-size:11px;color:#888;cursor:pointer;padding:5px 12px;border:0.5px solid rgba(0,0,0,0.15);border-radius:20px;transition:all 0.2s;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.up-label:hover{background:rgba(0,0,0,0.05);color:#333}
+#mfile{display:none}
+.prog-bar{position:absolute;bottom:7px;left:20px;right:20px;height:3px;background:rgba(0,0,0,0.1);border-radius:2px;cursor:pointer;overflow:hidden}
+.prog-fill{height:100%;background:#111;border-radius:2px;width:0%;transition:width 0.5s linear}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<div class="topbar"><span class="topbar-title">Bleach TYBW Cour 4</span></div>
+
+<div class="clock-area">
+  <div class="labels-row">
+    <div class="unit-label">Days</div><div class="sep-sp"></div>
+    <div class="unit-label">Hours</div><div class="sep-sp"></div>
+    <div class="unit-label">Minutes</div><div class="sep-sp"></div>
+    <div class="unit-label">Seconds</div>
+  </div>
+  <div class="digits-row">
+    <div class="unit-digits" id="d-days"></div>
+    <div class="colon">:</div>
+    <div class="unit-digits" id="d-hours"></div>
+    <div class="colon">:</div>
+    <div class="unit-digits" id="d-minutes"></div>
+    <div class="colon">:</div>
+    <div class="unit-digits" id="d-seconds"></div>
+  </div>
+  <div><div class="date-badge">⏰ <span id="dateLbl">Jun 25, 2026 &nbsp;00:00</span></div></div>
+  <div><div class="event-toggle">
+    <button class="toggle-btn active" id="btn-c" onclick="switchTo('cinema')">🎬 Cinema</button>
+    <button class="toggle-btn" id="btn-g" onclick="switchTo('global')">🌍 Streaming</button>
+  </div></div>
+</div>
+
+<!-- MUSIC PLAYER -->
+<div class="player">
+  <div class="p-info">
+    <div class="p-title" id="pTitle">No music loaded</div>
+    <div class="p-sub" id="pSub">Click "Load music" to add a track</div>
+  </div>
+  <div class="p-controls">
+    <button class="ic-btn" onclick="skip(-10)" title="−10s">⏮</button>
+    <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+    <button class="ic-btn" onclick="skip(10)"  title="+10s">⏭</button>
+  </div>
+  <div class="vol-row">
+    <span style="font-size:13px">🔊</span>
+    <input class="vol-sl" type="range" id="volSl" min="0" max="1" step="0.01" value="0.8" oninput="audio.volume=this.value">
+  </div>
+  <label class="up-label" for="mfile">♪ Load music</label>
+  <input type="file" id="mfile" accept="audio/*">
+  <div class="prog-bar" id="progBar" onclick="seekClick(event)">
+    <div class="prog-fill" id="progFill"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════
+   iOS-STYLE DRUM ROLLER
+   ══════════════════════════════════ */
+const UNITS = [
+  {cont:'d-days',   len:3},
+  {cont:'d-hours',  len:2},
+  {cont:'d-minutes',len:2},
+  {cont:'d-seconds',len:2},
+];
+
+// drum state: current value shown
+const drumState = {};
+
+// Build digits 0-9 repeating so we can scroll infinitely-ish
+// We use 30 cells (0-9 three times) and keep current index
+const POOL = 30; // 3 full cycles of 0-9
+
+function buildDrum(containerId, digitCount) {
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = '';
+  for (let d = 0; d < digitCount; d++) {
+    const drumEl = document.createElement('div');
+    drumEl.className = 'drum';
+    drumEl.id = containerId + '-drum-' + d;
+
+    const track = document.createElement('div');
+    track.className = 'drum-track';
+    track.id = containerId + '-track-' + d;
+
+    for (let i = 0; i < POOL; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'drum-cell';
+      cell.textContent = i % 10;
+      track.appendChild(cell);
+    }
+
+    drumEl.appendChild(track);
+    wrap.appendChild(drumEl);
+
+    // init: show digit 0 → index 0 in pool
+    drumState[containerId + '-' + d] = 0;
+    positionTrack(containerId, d, 0, false);
+  }
+}
+
+function getCellHeight(containerId, d) {
+  const track = document.getElementById(containerId + '-track-' + d);
+  return track.firstChild.getBoundingClientRect().height || 
+         track.firstChild.offsetHeight || 100;
+}
+
+function positionTrack(containerId, d, idx, animate) {
+  const track = document.getElementById(containerId + '-track-' + d);
+  const cellH = track.firstChild.offsetHeight;
+  if (!animate) track.style.transition = 'none';
+  else          track.style.transition = 'transform 0.42s cubic-bezier(0.23,1,0.32,1)';
+  track.style.transform = 'translateY(' + (-idx * cellH) + 'px)';
+}
+
+function setDrumDigit(containerId, d, newVal, animate) {
+  const key = containerId + '-' + d;
+  const oldIdx = drumState[key];
+  const oldVal = oldIdx % 10;
+
+  // find nearest index for newVal going forward (scroll down = next number)
+  let delta = (newVal - oldVal + 10) % 10;
+  if (delta === 0) return; // same digit, no change
+  let newIdx = oldIdx + delta;
+
+  // keep pool in bounds — reset to middle cycle when near edges
+  if (newIdx >= POOL - 10) {
+    // snap without animation to same visual position but middle of pool
+    const midIdx = 10 + (newIdx % 10);
+    positionTrack(containerId, d, midIdx, false);
+    newIdx = midIdx;
+  }
+
+  drumState[key] = newIdx;
+  // need a frame for non-animated snap to take effect
+  if (animate) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => positionTrack(containerId, d, newIdx, true));
+    });
+  } else {
+    positionTrack(containerId, d, newIdx, false);
+  }
+}
+
+function setUnitValue(containerId, num, len, animate) {
+  const str = String(num).padStart(len, '0');
+  for (let d = 0; d < len; d++) {
+    setDrumDigit(containerId, d, parseInt(str[d]), animate);
+  }
+}
+
+// Build all drums
+UNITS.forEach(u => buildDrum(u.cont, u.len));
+
+/* ══════════════════════════════════
+   COUNTDOWN LOGIC
+   ══════════════════════════════════ */
+const TARGETS = {
+  cinema: new Date('2026-06-25T00:00:00+09:00').getTime(),
+  global: new Date('2026-07-25T00:00:00+09:00').getTime(),
+};
+const DATE_LABELS = {
+  cinema: 'Jun 25, 2026 \u00a0\u00a000:00',
+  global: 'Jul 25, 2026 \u00a0\u00a000:00',
+};
+let curTarget = 'cinema';
+let initialized = false;
+
+function tick() {
+  const now = Date.now();
+  let diff = Math.max(0, TARGETS[curTarget] - now);
+  const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+  const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
+  const m = Math.floor(diff / 60000);    diff -= m * 60000;
+  const s = Math.floor(diff / 1000);
+
+  const animate = initialized;
+  setUnitValue('d-days',    d, 3, animate);
+  setUnitValue('d-hours',   h, 2, animate);
+  setUnitValue('d-minutes', m, 2, animate);
+  setUnitValue('d-seconds', s, 2, animate);
+  initialized = true;
+}
+
+function switchTo(key) {
+  curTarget = key;
+  document.getElementById('btn-c').classList.toggle('active', key==='cinema');
+  document.getElementById('btn-g').classList.toggle('active', key==='global');
+  document.getElementById('dateLbl').innerHTML = DATE_LABELS[key];
+  // reset drum states so next tick re-positions
+  Object.keys(drumState).forEach(k => drumState[k] = 0);
+  UNITS.forEach(u => {
+    for (let d=0;d<u.len;d++) positionTrack(u.cont, d, 0, false);
+  });
+  initialized = false;
+  tick();
+}
+
+tick();
+setInterval(tick, 1000);
+
+/* ══════════════════════════════════
+   MUSIC PLAYER — FileReader approach
+   (works 100% offline/local)
+   ══════════════════════════════════ */
+const audio = new Audio();
+audio.loop = true;
+audio.volume = 0.8;
+
+const mfileInput = document.getElementById('mfile');
+mfileInput.addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  // Use FileReader → data URL (works in all local contexts)
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    audio.src = e.target.result;
+    audio.load();
+    audio.play().then(() => {
+      document.getElementById('playBtn').textContent = '⏸';
+      document.getElementById('pTitle').textContent = file.name.replace(/\\.[^/.]+$/, '');
+      document.getElementById('pSub').textContent = 'Now playing \u2022 looping';
+    }).catch(err => {
+      document.getElementById('pSub').textContent = 'Click ▶ to start';
+    });
+  };
+  reader.readAsDataURL(file);
+});
+
+function togglePlay() {
+  if (!audio.src) return;
+  if (audio.paused) {
+    audio.play();
+    document.getElementById('playBtn').textContent = '⏸';
+  } else {
+    audio.pause();
+    document.getElementById('playBtn').textContent = '▶';
+  }
+}
+
+function skip(sec) {
+  if (!audio.duration) return;
+  audio.currentTime = Math.min(audio.duration, Math.max(0, audio.currentTime + sec));
+}
+
+function seekClick(e) {
+  if (!audio.duration) return;
+  const r = document.getElementById('progBar').getBoundingClientRect();
+  audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+}
+
+setInterval(() => {
+  if (!audio.duration) return;
+  document.getElementById('progFill').style.width =
+    ((audio.currentTime / audio.duration) * 100).toFixed(2) + '%';
+}, 500);
+</script>
+</body>
+</html>
